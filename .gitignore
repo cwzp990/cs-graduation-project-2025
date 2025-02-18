@@ -1,4 +1,7 @@
+.DS_Store
+
 **/.swc/
 **/.temp/
+**/.DS_Store
 **/node_modules/
 **/dist/
