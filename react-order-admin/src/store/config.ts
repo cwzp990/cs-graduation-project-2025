@@ -26,7 +26,7 @@ const useConfigStore = create<ConfigState & Actions>()((set) => ({
   themeConfig: {
     _algorithm: ['default'],
     algorithm: [theme.defaultAlgorithm],
-    primaryColor: '#03dac6'
+    primaryColor: '#1677ff'
   },
   themeOptions: [
     { label: 'Light', value: 'default' },

@@ -5,11 +5,11 @@ import {
 import App from "../App";
 import { MenuItemType } from "antd/es/menu/interface";
 
-
 export type AdminRouterItem = RouteObject & {
   // set antd menu props in meta
   meta?: MenuItemType
   children?: AdminRouterItem[]
+  sort?: number
 }
 
 /**
@@ -32,6 +32,12 @@ const loadRouteModules = async () => {
     }
   }
 
+  // 按 sort 属性排序
+  routeModules.sort((a, b) => {
+    const sortA = a.sort || 0;
+    const sortB = b.sort || 0;
+    return sortA - sortB;
+  });
 
   return routeModules
 }

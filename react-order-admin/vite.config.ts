@@ -6,5 +6,12 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: "esnext",
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        javascriptEnabled: true,
+      },
+    },
   }
 })
