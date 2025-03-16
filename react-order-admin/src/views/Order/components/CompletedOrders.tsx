@@ -318,14 +318,6 @@ const CompletedOrders: React.FC = () => {
           <Button onClick={handleFilterReset}>重置</Button>
         </Form.Item>
       </Form>
-      {/* 新增订单按钮，使用绝对定位到右上方 */}
-      <Button
-        type="primary"
-        onClick={() => showModal()}
-        style={{ position: "absolute", top: 0, right: 0 }}
-      >
-        新增订单
-      </Button>
       <Table
         dataSource={filteredOrders}
         columns={columns}

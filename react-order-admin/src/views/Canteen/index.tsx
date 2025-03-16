@@ -240,6 +240,8 @@ const CanteenManagementPage: React.FC = () => {
         title={editingCanteen ? "编辑食堂信息" : "添加食堂信息"}
         open={isModalVisible} // Ant Design v5 使用 open 代替 visible
         onOk={handleSubmit}
+        okText="确定"
+        cancelText="取消"
         onCancel={() => setIsModalVisible(false)}
       >
         <Form form={form} layout="vertical" autoComplete="off">

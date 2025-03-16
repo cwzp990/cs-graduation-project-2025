@@ -31,7 +31,7 @@ const Headerbar = (props: { colorBgContainer: string }) => {
             onChange={(checked) => setAlgorithm(checked ? "default" : "dark")}
           />
           {/* <Switch checkedChildren="Compact" unCheckedChildren="Loose" onChange={(checked) => setCompactAlgorithm(checked ? 'compact' : '')} /> */}
-          <p style={{ marginRight: 10 }}>Yujian Xue</p>
+          <p style={{ marginRight: 10 }}>陈文真</p>
           <img
             src="https://avatars.githubusercontent.com/u/48818060?s=48&v=4"
             alt="avatar"
