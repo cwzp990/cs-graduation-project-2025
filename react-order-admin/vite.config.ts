@@ -7,6 +7,13 @@ export default defineConfig({
   build: {
     target: "esnext",
   },
+  server: {
+    proxy: {
+      "/sell": {
+        target: "http://localhost:8080",
+      },
+    },
+  },
   css: {
     preprocessorOptions: {
       scss: {

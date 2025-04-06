@@ -1,30 +1,28 @@
-import {
-  RouteObject,
-  createBrowserRouter,
-} from "react-router-dom";
-import App from "../App";
+/* eslint-disable react-refresh/only-export-components */
+import { RouteObject, createBrowserRouter } from "react-router-dom";
 import { MenuItemType } from "antd/es/menu/interface";
-
+import App from "../App";
+import Login from "../views/Login";
 export type AdminRouterItem = RouteObject & {
   // set antd menu props in meta
-  meta?: MenuItemType
-  children?: AdminRouterItem[]
-  sort?: number
-}
+  meta?: MenuItemType;
+  children?: AdminRouterItem[];
+  sort?: number;
+};
 
 /**
  * auto load route from views/***\/*.router.ts
  * @returns route
  */
 const loadRouteModules = async () => {
-  const routeModuleFiles = import.meta.glob('../views/**/*.router.tsx', {
+  const routeModuleFiles = import.meta.glob("../views/**/*.router.tsx", {
     eager: true,
-    import: 'default'
-  })
-  const routeModules: AdminRouterItem[] = []
+    import: "default",
+  });
+  const routeModules: AdminRouterItem[] = [];
 
   for await (const [key, module] of Object.entries(routeModuleFiles)) {
-    console.log('key = ', key, 'module = ', module)
+    console.log("key = ", key, "module = ", module);
 
     if (module) {
       const routes = Array.isArray(module) ? module : [module];
@@ -39,15 +37,19 @@ const loadRouteModules = async () => {
     return sortA - sortB;
   });
 
-  return routeModules
-}
+  return routeModules;
+};
 
-export const routes: AdminRouterItem[] = [
-  ...await loadRouteModules()
-]
+export const routes: AdminRouterItem[] = [...(await loadRouteModules())];
 
-export default createBrowserRouter([{
-  path: "/",
-  element: <App />,
-  children: routes,
-}])
+export default createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,
+    children: routes,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+]);

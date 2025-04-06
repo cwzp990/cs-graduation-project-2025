@@ -237,6 +237,7 @@ const CanteenManagementPage: React.FC = () => {
         style={{ marginTop: "16px" }}
       />
       <Modal
+        maskClosable={false}
         title={editingCanteen ? "编辑食堂信息" : "添加食堂信息"}
         open={isModalVisible} // Ant Design v5 使用 open 代替 visible
         onOk={handleSubmit}

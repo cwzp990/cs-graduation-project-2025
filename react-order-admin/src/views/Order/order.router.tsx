@@ -64,7 +64,7 @@ const orderRoutes: AdminRouterItem[] = [
         },
       },
     ],
-    sort: 5,
+    sort: 6,
   },
 ];
 

@@ -12,7 +12,7 @@ const notificationRoutes: AdminRouterItem[] = [
       key: "/notification-manager",
       icon: <NotificationOutlined />,
     },
-    sort: 4,
+    sort: 5,
   },
 ]
 

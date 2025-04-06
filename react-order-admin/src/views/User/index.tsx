@@ -1,134 +1,53 @@
-import React, { useState } from "react";
-import { Table, Form, Input, Button, Modal, Space, Radio, Select, Checkbox } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Avatar } from "antd";
+import React, { useEffect, useState } from "react";
+import { Table, Form, Input, Button, Space, Select, Modal, message, Image } from "antd";
+import dayjs from "dayjs";
+import { getPersonList, updatePerson } from "../../service/url";
 
-// 定义食堂人员数据类型
 type User = {
-  id: number;
-  name: string;
+  sellerId: number;
+  username: string;
   gender: string;
   phone: string;
   email: string;
-  idCard: string;
-  avatar: string;
 };
 
 const UserManagement: React.FC = () => {
-  // 模拟食堂人员数据
-  const [personnel, setPersonnel] = useState<User[]>([
-    {
-      id: 1,
-      name: "张三",
-      gender: "男",
-      phone: "13800138000",
-      email: "zhangsan@example.com",
-      idCard: "123456789012345678",
-      avatar: "https://example.com/avatar1.jpg",
-    },
-    {
-      id: 2,
-      name: "李四",
-      gender: "女",
-      phone: "13900139000",
-      email: "lisi@example.com",
-      idCard: "234567890123456789",
-      avatar: "https://example.com/avatar2.jpg",
-    },
-  ]);
-
+  const [personnel, setPersonnel] = useState<User[]>([]);
   // 新增/编辑表单
   const [form] = Form.useForm();
   // 筛选表单
   const [filterForm] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingPersonnel, setEditingPersonnel] = useState<User | null>(null);
-  // 存储过滤后的数据
-  const [filteredPersonnel, setFilteredPersonnel] = useState(personnel);
+  const [sellerId, setSellerId] = useState<number | null>(null);
 
-  // 显示新增/编辑模态框
-  const showModal = (person?: User) => {
-    if (person) {
-      setEditingPersonnel(person);
-      form.setFieldsValue(person);
-    } else {
-      setEditingPersonnel(null);
-      form.resetFields();
-    }
+  const handleFilter = () => {};
+
+  const handleEdit = (record: User) => {
+    setSellerId(record.sellerId);
+    form.setFieldsValue(record);
     setIsModalVisible(true);
   };
 
-  // 处理表单提交
+  const onAddHandle = () => {
+    setSellerId(null);
+    form.resetFields();
+    setIsModalVisible(true);
+  };
+
   const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      if (editingPersonnel) {
-        // 更新食堂人员信息
-        setPersonnel(
-          personnel.map((person) =>
-            person.id === editingPersonnel.id
-              ? { ...person, ...values }
-              : person
-          )
-        );
-      } else {
-        // 新增食堂人员信息
-        const newPerson: User = {
-          id: personnel.length > 0 ? personnel[personnel.length - 1].id + 1 : 1,
-          ...values,
-        };
-        setPersonnel([...personnel, newPerson]);
-      }
+    const validate = await form.validateFields();
+    if (validate) {
+      const params = form.getFieldsValue();
+      params.sellerId = sellerId ? sellerId : undefined;
+      await updatePerson(params);
+      await getPersonListData();
+      message.success(sellerId ? "编辑人员信息成功" : "新增人员信息成功");
       setIsModalVisible(false);
-    } catch (error) {
-      console.log("Form validation error:", error);
     }
-  };
-
-  // 处理删除食堂人员
-  const handleDelete = (id: number) => {
-    setPersonnel(personnel.filter((person) => person.id !== id));
-    // 同步更新过滤后的数据
-    setFilteredPersonnel(
-      filteredPersonnel.filter((person) => person.id !== id)
-    );
-  };
-
-  // 点击筛选按钮触发的筛选函数
-  const handleFilter = async () => {
-    const values = await filterForm.validateFields();
-    const { name = "", gender = "" } = values;
-    const newFilteredPersonnel = personnel.filter((person) => {
-      return (
-        person.name.includes(name) &&
-        (gender === "" || person.gender === gender)
-      );
-    });
-    setFilteredPersonnel(newFilteredPersonnel);
   };
 
   // 表格列定义
   const columns = [
-    {
-      title: (
-        <Checkbox
-          onChange={(e) => {
-            // 全选逻辑，这里简单打印日志，可按需实现
-            console.log("全选状态:", e.target.checked);
-          }}
-        />
-      ),
-      dataIndex: "checkbox",
-      key: "checkbox",
-      render: (_, record) => (
-        <Checkbox
-          onChange={(e) => {
-            // 单个勾选逻辑，这里简单打印日志，可按需实现
-            console.log("菜品", record.name, "勾选状态:", e.target.checked);
-          }}
-        />
-      ),
-    },
     {
       title: "序号",
       dataIndex: "id",
@@ -137,13 +56,22 @@ const UserManagement: React.FC = () => {
     },
     {
       title: "姓名",
-      dataIndex: "name",
-      key: "name",
+      dataIndex: "username",
+      key: "username",
+    },
+    {
+      title: "头像",
+      dataIndex: "avatar",
+      key: "avatar",
+      render: (value: string) => <Image src={value} width={100} height={100} />,
     },
     {
       title: "性别",
       dataIndex: "gender",
       key: "gender",
+      render: (value) => {
+        return value === 0 ? "男" : "女";
+      },
     },
     {
       title: "手机号",
@@ -151,38 +79,42 @@ const UserManagement: React.FC = () => {
       key: "phone",
     },
     {
-      title: "邮箱",
-      dataIndex: "email",
-      key: "email",
+      title: "创建时间",
+      dataIndex: "createTime",
+      key: "createTime",
+      render: (value) => {
+        return value ? dayjs(value).format("YYYY-MM-DD HH:mm:ss") : "";
+      },
     },
     {
-      title: "身份证",
-      dataIndex: "idCard",
-      key: "idCard",
-    },
-    {
-      title: "头像",
-      dataIndex: "avatar",
-      render: (avatar) => <Avatar src={avatar} />,
+      title: "更新时间",
+      dataIndex: "updateTime",
+      key: "updateTime",
+      render: (value) => {
+        return value ? dayjs(value).format("YYYY-MM-DD HH:mm:ss") : "";
+      },
     },
     {
       title: "操作",
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <Button icon={<EditOutlined />} onClick={() => showModal(record)}>
+          <Button type="link" onClick={() => handleEdit(record)}>
             编辑
-          </Button>
-          <Button
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
-          >
-            删除
           </Button>
         </Space>
       ),
     },
   ];
+
+  const getPersonListData = async () => {
+    const res = await getPersonList();
+    setPersonnel(res.data.list);
+  };
+
+  useEffect(() => {
+    getPersonListData();
+  }, []);
 
   return (
     <div style={{ position: "relative" }}>
@@ -193,78 +125,70 @@ const UserManagement: React.FC = () => {
         </Form.Item>
         <Form.Item name="gender" label="性别">
           <Select placeholder="请选择性别">
-            <Select.Option value="男">男</Select.Option>
-            <Select.Option value="女">女</Select.Option>
+            <Select.Option value={0}>男</Select.Option>
+            <Select.Option value={1}>女</Select.Option>
           </Select>
         </Form.Item>
         <Button type="primary" onClick={handleFilter}>
           筛选
         </Button>
       </Form>
-      <Button
-        type="primary"
-        onClick={() => showModal()}
-        style={{ position: "absolute", top: 0, right: 0 }}
-      >
+      <Button type="primary" style={{ position: "absolute", top: 0, right: 0 }} onClick={onAddHandle}>
         新增人员
       </Button>
       <Table
-        dataSource={filteredPersonnel}
+        dataSource={personnel}
         columns={columns}
-        rowKey="id"
-        style={{ marginTop: "16px" }}
+        rowKey="sellerId"
+        style={{ marginTop: 12 }}
       />
       <Modal
-        title={editingPersonnel ? "编辑人员信息" : "新增人员信息"}
+        maskClosable={false}
+        title={sellerId ? "编辑人员" : "新增人员"}
         open={isModalVisible}
         onOk={handleSubmit}
+        okText="确定"
+        cancelText="取消"
         onCancel={() => setIsModalVisible(false)}
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" autoComplete="off">
           <Form.Item
             label="姓名"
-            name="name"
+            name="username"
             rules={[{ required: true, message: "请输入姓名!" }]}
           >
-            <Input />
+            <Input placeholder="请输入姓名" />
           </Form.Item>
           <Form.Item
             label="性别"
             name="gender"
             rules={[{ required: true, message: "请选择性别!" }]}
           >
-            <Radio.Group>
-              <Radio value="男">男</Radio>
-              <Radio value="女">女</Radio>
-            </Radio.Group>
+            <Select placeholder="请选择性别">
+              <Select.Option value={0}>男</Select.Option>
+              <Select.Option value={1}>女</Select.Option>
+            </Select>
           </Form.Item>
           <Form.Item
-            label="手机号"
+            label="密码"
+            name="password"
+            rules={[{ required: true, message: "请输入密码!" }]}
+          >
+            <Input type="password" placeholder="请输入密码" />
+          </Form.Item>
+          <Form.Item
+            label="手机号码"
             name="phone"
-            rules={[{ required: true, message: "请输入手机号!" }]}
+            rules={[{ required: true, message: "请输入手机号码!" }]}
           >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="邮箱"
-            name="email"
-            rules={[{ required: true, message: "请输入邮箱!" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="身份证"
-            name="idCard"
-            rules={[{ required: true, message: "请输入身份证号!" }]}
-          >
-            <Input />
+            <Input placeholder="请输入手机号码" />
           </Form.Item>
           <Form.Item
             label="头像"
             name="avatar"
-            rules={[{ required: true, message: "请输入头像链接!" }]}
+            rules={[{ required: true, message: "请输入头像!" }]}
           >
-            <Input />
+            <Input placeholder="请输入头像" />
           </Form.Item>
         </Form>
       </Modal>

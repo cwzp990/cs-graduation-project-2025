@@ -141,6 +141,7 @@ const NotificationManagementPage: React.FC = () => {
         )}
       />
       <Modal
+        maskClosable={false}
         title="编辑菜品信息"
         visible={isModalVisible}
         onOk={handleOk}
