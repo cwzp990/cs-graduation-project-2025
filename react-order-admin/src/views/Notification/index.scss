@@ -4,7 +4,10 @@
       margin-bottom: 16px;
       .edit-item-name {
         display: flex;
-        margin-bottom: 10px;
+        align-items: center;
+      }
+      .edit-item-desc {
+        margin: 10px 0;
       }
     }
   }

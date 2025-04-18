@@ -41,8 +41,8 @@ request.interceptors.response.use(
       switch (error.response.status) {
         case 500:
           // 登出
-          localStorage.removeItem("token");
-          window.location.href = "/login";
+          // localStorage.removeItem("token");
+          // window.location.href = "/login";
           break;
         default:
           break;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Form,
@@ -7,9 +7,11 @@ import {
   Modal,
   Space,
   Select,
-  Checkbox,
 } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { getCanteenList } from "../../service/url";
+import { message } from 'antd';
+import { updateCanteen, deleteCanteen } from '../../service/url';
 
 // 定义食堂数据类型
 type Canteen = {
@@ -32,28 +34,7 @@ const auditStatusOptions = [
 
 const CanteenManagementPage: React.FC = () => {
   // 模拟食堂数据
-  const [canteens, setCanteens] = useState<Canteen[]>([
-    {
-      id: 1,
-      name: "第一食堂",
-      address: "校园一号楼",
-      openingHours: "07:00 - 21:00",
-      photo: "https://example.com/canteen1.jpg",
-      manager: "张三",
-      phone: "13800138000",
-      auditStatus: "approved",
-    },
-    {
-      id: 2,
-      name: "第二食堂",
-      address: "校园二号楼",
-      openingHours: "08:00 - 20:00",
-      photo: "https://example.com/canteen2.jpg",
-      manager: "李四",
-      phone: "13900139000",
-      auditStatus: "pending",
-    },
-  ]);
+  const [canteens, setCanteens] = useState<Canteen[]>([]);
 
   // 新增/编辑表单
   const [form] = Form.useForm();
@@ -61,80 +42,79 @@ const CanteenManagementPage: React.FC = () => {
   const [filterForm] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCanteen, setEditingCanteen] = useState<Canteen | null>(null);
-  // 存储过滤后的数据
-  const [filteredCanteens, setFilteredCanteens] = useState(canteens);
+
+  const closeModal = () => {
+    setEditingCanteen(null);
+    setIsModalVisible(false)
+  }
+
+  const getCanteenListData = async () => {
+    const res = await getCanteenList();
+    setCanteens(res.data);
+  }
 
   // 显示新增/编辑模态框
-  const showModal = (canteen?: Canteen) => {
-    if (canteen) {
-      setEditingCanteen(canteen);
-      form.setFieldsValue({
-        name: canteen.name,
-        address: canteen.address,
-        openingHours: canteen.openingHours,
-        photo: canteen.photo,
-        manager: canteen.manager,
-        phone: canteen.phone,
-        auditStatus: canteen.auditStatus,
-      });
-    } else {
-      setEditingCanteen(null);
-      form.resetFields();
+  const showModal = (record?: Canteen) => {
+    setEditingCanteen(record || null);
+    form.resetFields();
+    if (record) {
+      form.setFieldsValue(record);
     }
     setIsModalVisible(true);
   };
 
   // 处理表单提交
   const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      if (editingCanteen) {
-        // 更新食堂信息
-        setCanteens(
-          canteens.map((canteen) =>
-            canteen.id === editingCanteen.id
-              ? { ...canteen, ...values }
-              : canteen
-          )
-        );
-      } else {
-        // 新增食堂信息
-        const newCanteen: Canteen = {
-          id: canteens.length > 0 ? canteens[canteens.length - 1].id + 1 : 1,
-          ...values,
-        };
-        setCanteens([...canteens, newCanteen]);
-      }
-      setIsModalVisible(false);
-    } catch (error) {
-      console.log("Form validation error:", error);
-    }
+    const validate = await form.validateFields();
+    if (!validate) return;
+    // 编辑模式
+    const params = form.getFieldsValue();
+    await updateCanteen({
+      ...params,
+      id: editingCanteen?.id
+    });
+    message.success(editingCanteen?.id ? '编辑食堂成功' : '新建食堂成功');
+    setIsModalVisible(false);
+    getCanteenListData(); // 刷新列表
+
   };
 
   // 处理删除食堂
-  const handleDelete = (id: number) => {
-    setCanteens(canteens.filter((canteen) => canteen.id !== id));
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteCanteen(id);
+      message.success('删除成功');
+      getCanteenListData(); // 刷新列表
+    } catch (error) {
+      message.error('删除失败');
+    }
   };
 
+  // 处理筛选
   const handleFilter = async () => {
-    const values = await filterForm.validateFields();
-    const { name = "", status = "" } = values;
-    const newFilteredCanteen = canteens.filter((canteen) => {
-      const nameMatch = canteen.name.includes(name);
-      const statusMatch = status === "" || canteen.auditStatus === status;
-      return nameMatch && statusMatch;
-    });
-    setFilteredCanteens(newFilteredCanteen);
+    try {
+      const values = await filterForm.validateFields();
+      const filtered = canteens.filter(canteen => {
+        const nameMatch = !values.name ||
+          canteen.name.toLowerCase().includes(values.name.toLowerCase());
+        const statusMatch = !values.status ||
+          canteen.auditStatus === values.status;
+        return nameMatch && statusMatch;
+      });
+      setCanteens(filtered);
+    } catch (error) {
+      message.error('筛选失败');
+    }
+  };
+
+  // 重置筛选
+  const resetFilter = () => {
+    filterForm.resetFields();
+    getCanteenListData(); // 重新获取所有数据
   };
 
   // 表格列定义
   const columns = [
-    {
-      title: <Checkbox />,
-      dataIndex: "id",
-      key: "id",
-      render: (_, record) => <Checkbox />,
-    },
     {
       title: "序号",
       dataIndex: "id",
@@ -160,7 +140,7 @@ const CanteenManagementPage: React.FC = () => {
       title: "食堂照片",
       dataIndex: "photo",
       key: "photo",
-      render: (photo) => <img src={photo} alt="食堂照片" width={100} />,
+      render: (url) => <img src={url} alt="食堂照片" width={100} />,
     },
     {
       title: "食堂负责人",
@@ -200,6 +180,10 @@ const CanteenManagementPage: React.FC = () => {
     },
   ];
 
+  useEffect(() => {
+    getCanteenListData()
+  }, [])
+
   return (
     <div style={{ position: "relative" }}>
       <Form form={filterForm} layout="inline" autoComplete="off">
@@ -218,9 +202,12 @@ const CanteenManagementPage: React.FC = () => {
           <Select placeholder="请选择状态" options={auditStatusOptions} />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit" onClick={handleFilter}>
-            筛选
-          </Button>
+          <Space>
+            <Button type="primary" onClick={handleFilter}>
+              筛选
+            </Button>
+            <Button onClick={resetFilter}>重置</Button>
+          </Space>
         </Form.Item>
       </Form>
       <Button
@@ -231,7 +218,7 @@ const CanteenManagementPage: React.FC = () => {
         添加食堂
       </Button>
       <Table
-        dataSource={filteredCanteens}
+        dataSource={canteens}
         columns={columns}
         rowKey="id"
         style={{ marginTop: "16px" }}
@@ -239,11 +226,11 @@ const CanteenManagementPage: React.FC = () => {
       <Modal
         maskClosable={false}
         title={editingCanteen ? "编辑食堂信息" : "添加食堂信息"}
-        open={isModalVisible} // Ant Design v5 使用 open 代替 visible
+        open={isModalVisible}
         onOk={handleSubmit}
         okText="确定"
         cancelText="取消"
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={closeModal}
       >
         <Form form={form} layout="vertical" autoComplete="off">
           <Form.Item

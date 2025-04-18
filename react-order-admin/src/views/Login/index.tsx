@@ -1,4 +1,4 @@
-import React, { memo, FC } from "react";
+import { memo, FC } from "react";
 import { useNavigate } from "react-router-dom";
 import { Form, Input, Button, Checkbox, message } from "antd";
 import useUserStore from "../../store/user";
@@ -24,8 +24,7 @@ const Login: FC = () => {
     remember: boolean;
   }) => {
     const data = await getLogin(values.phone, values.password);
-    await data;
-    if (data && data.code === 0) {
+    if (data?.code === 0) {
     //   const { roleType, userName, avatar } = data.data;
     //   await setUserInfo({
     //     roleType,
