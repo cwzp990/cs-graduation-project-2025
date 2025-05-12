@@ -1,207 +1,236 @@
-import { View, Textarea, Text } from '@tarojs/components'
-import { Cell, Button, Popup, Radio, InputNumber } from '@nutui/nutui-react-taro'
-import { useState, useEffect } from 'react'
-import Taro, { useRouter } from '@tarojs/taro'
+import React, { useState, useEffect } from 'react'
+import { View, Text, ScrollView } from '@tarojs/components'
+import Taro from '@tarojs/taro'
+import { 
+  Card,
+  Tag, 
+  Empty, 
+  Button, 
+  Divider, 
+  Avatar, 
+  Price, 
+  Skeleton
+} from '@nutui/nutui-react-taro'
 import './index.scss'
 
-interface PayWay {
-  id: number;
-  package: string;
-  money: number;
+interface OrderDetail {
+  detailId: string
+  orderId: string
+  productId: string
+  productName: string
+  productPrice: number
+  productQuantity: number
+  productIcon: string
 }
 
-interface CartItem {
-  id: string | number;
-  name: string;
-  price: number;
-  quantity: number;
+interface Order {
+  orderId: string
+  buyerName: string
+  buyerPhone: string
+  buyerAddress: string
+  buyerOpenid: string
+  orderAmount: number
+  orderStatus: number
+  payStatus: number
+  payType: number | null
+  orderStatusStr: string
+  payStatusStr: string
+  createTime: string
+  updateTime: string
+  orderDetailList: OrderDetail[]
 }
 
-const payWays: PayWay[] = [
-  { id: 1, package: '会员卡', money: 100 },
-  { id: 2, package: '微信支付', money: 500 },
-  { id: 3, package: '银行卡', money: 1000 }
-]
+const OrdersPage: React.FC = () => {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [hasMore, setHasMore] = useState<boolean>(true)
+  const [page, setPage] = useState<number>(1)
 
-const ConfirmOrder = () => {
-  const router = useRouter()
-  const [tableNum, setTableNum] = useState('')
-  const [cartList, setCartList] = useState<CartItem[]>([])
-  const [totalPrice, setTotalPrice] = useState(0)
-  const [totalNum, setTotalNum] = useState(0)
-  const [dinerNum, setDinerNum] = useState(1)
-  const [remarks, setRemarks] = useState('')
-  const [showPayWay, setShowPayWay] = useState(false)
-  const [selectedPayWay, setSelectedPayWay] = useState<PayWay | null>(null)
-
-  useEffect(() => {
-    const { tableNum: num } = router.params
-    setTableNum(num as string)
-    // sell/seller/order/list {"page":1,"size":10,"orderStatus":1}
-  //   {
-  //     "code": 0,
-  //     "msg": "成功",
-  //     "data": {
-  //         "page": {
-  //             "pageNo": 1,
-  //             "pageSize": 10,
-  //             "totalCount": 1,
-  //             "totalPages": 1
-  //         },
-  //         "list": [
-  //             {
-  //                 "orderId": "1743925080485307084",
-  //                 "buyerName": "微信用户",
-  //                 "buyerPhone": "15805849785",
-  //                 "buyerAddress": "1号桌",
-  //                 "buyerOpenid": "null",
-  //                 "orderAmount": 48.00,
-  //                 "orderStatus": 2,
-  //                 "payStatus": 0,
-  //                 "payType": null,
-  //                 "orderStatusStr": "已完结",
-  //                 "payStatusStr": "等待支付",
-  //                 "createTime": "2025-04-06 15:38:00",
-  //                 "updateTime": "2025-04-06 16:40:48",
-  //                 "orderDetailList": [
-  //                     {
-  //                         "detailId": "1743925080493947309",
-  //                         "orderId": "1743925080485307084",
-  //                         "productId": "1743769561850693865",
-  //                         "productName": "宫保鸡丁",
-  //                         "productPrice": 24.00,
-  //                         "productQuantity": 2,
-  //                         "productIcon": "http://p0.meituan.net/wmproduct/006990a72627d23ef2c7ff0e8288aa3a94544.jpg"
-  //                     }
-  //                 ]
-  //             }
-  //         ]
-  //     }
-  // }
-    loadCartData()
-  }, [])
-
-  const loadCartData = () => {
-    const cart = Taro.getStorageSync('cart') || []
-    setCartList(cart)
-    calculateTotal(cart)
-  }
-
-  const calculateTotal = (cart: CartItem[]) => {
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const num = cart.reduce((sum, item) => sum + item.quantity, 0)
-    setTotalPrice(total)
-    setTotalNum(num)
-  }
-
-  const handleSubmit = () => {
-    if (!selectedPayWay) {
-      Taro.showToast({ title: '请选择支付方式', icon: 'none' })
-      return
-    }
-
-    const goods = cartList.map(item => ({
-      productId: item.id,
-      productQuantity: item.quantity
-    }))
-
-    Taro.request({
-      url: 'YOUR_API_BASE_URL/buyer/order/create',
-      method: 'POST',
-      header: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      data: {
-        openid: 'YOUR_OPENID', // 需要从全局状态获取
-        name: 'YOUR_NAME', // 需要从全局状态获取
-        phone: '15805849785',
-        address: tableNum,
-        items: JSON.stringify(goods)
-      },
-      success: (res) => {
-        if (res.data?.data) {
-          Taro.showToast({ title: '下单成功！' })
-          Taro.setStorageSync('cart', '')
-          Taro.switchTab({ url: '/pages/profile/index' })
+  // 获取订单列表
+  const fetchOrders = async (pageNum = 1) => {
+    try {
+      setLoading(true)
+      const res = await Taro.request({
+        url: 'sell/seller/order/list',
+        method: 'GET',
+        data: {
+          page: pageNum,
+          size: 10
         }
+      })
+      
+      if (pageNum === 1) {
+        setOrders(res.data || [])
+      } else {
+        setOrders([...orders, ...(res.data || [])])
       }
+      
+      setHasMore(res.data && res.data.length > 0)
+      setPage(pageNum)
+    } catch (error) {
+      console.error('获取订单列表失败', error)
+      Taro.showToast({
+        title: '获取订单列表失败',
+        icon: 'none'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 加载更多
+  const loadMore = () => {
+    if (hasMore) {
+      fetchOrders(page + 1)
+    }
+  }
+
+  // 查看订单详情
+  const viewOrderDetail = (orderId: string) => {
+    Taro.navigateTo({
+      url: `/pages/order-detail/index?orderId=${orderId}`
     })
   }
 
+  // 获取订单状态对应的标签类型
+  const getOrderStatusTagType = (status: number) => {
+    switch (status) {
+      case 0: return 'primary' // 新订单
+      case 1: return 'success' // 已完成
+      case 2: return 'info'    // 已取消
+      default: return 'default'
+    }
+  }
+
+  // 获取支付状态对应的标签类型
+  const getPayStatusTagType = (status: number) => {
+    switch (status) {
+      case 0: return 'warning' // 等待支付
+      case 1: return 'success' // 支付成功
+      case 2: return 'danger'  // 支付失败
+      default: return 'default'
+    }
+  }
+
+  // 监听滚动到底部事件
+  const handleScrollToLower = () => {
+    if (hasMore && !loading) {
+      loadMore()
+    }
+  }
+
+  // 初始化加载
+  useEffect(() => {
+    fetchOrders()
+  }, [])
+
   return (
-    <View className='confirm-order'>
-      <View className='order-info'>
-        <Cell title='桌号'>
-          <View>{tableNum}</View>
-        </Cell>
-        <Cell title='用餐人数'>
-          <InputNumber
-            value={dinerNum}
-            onChange={(value: number) => setDinerNum(value)}
-            min={1}
-            max={20}
-          />
-        </Cell>
-        <Cell title='备注'>
-          <Textarea
-            value={remarks}
-            onInput={(e) => setRemarks(e.detail.value)}
-            placeholder='请输入备注信息'
-            maxlength={200}
-          />
-        </Cell>
+    <View className="orders-page">
+      <View className="orders-header">
+        <Text className="page-title">我的订单</Text>
       </View>
 
-      <View className='order-items'>
-        <View className='section-title'>订单明细</View>
-        {cartList.map((item) => (
-          <Cell
-            key={item.id}
-            title={item.name}
+      {loading && page === 1 ? (
+        <View className="skeleton-container">
+          {[1, 2, 3].map(item => (
+            <Skeleton
+              key={item}
+              width="94%"
+              height="160px"
+              animated
+              title
+              avatar
+              row={3}
+              className="skeleton-item"
+            />
+          ))}
+        </View>
+      ) : orders.length === 0 ? (
+        <Empty
+          description="暂无订单"
+          image="empty"
+        >
+          <Button 
+            type="primary" 
+            size="small"
+            onClick={() => Taro.switchTab({ url: '/pages/menu/index' })}
           >
-            <View className='item-info'>
-              <View>x{item.quantity}</View>
-              <View>¥{(item.price * item.quantity).toFixed(2)}</View>
+            去点餐
+          </Button>
+        </Empty>
+      ) : (
+        <ScrollView
+          className="orders-list"
+          scrollY
+          lowerThreshold={100}
+          onScrollToLower={handleScrollToLower}
+        >
+          {orders.map((order) => (
+            <Card
+              key={order.orderId}
+              className="order-card"
+              onClick={() => viewOrderDetail(order.orderId)}
+            >
+              <View className="order-card-header">
+                <View className="order-id">订单号: {order.orderId}</View>
+                <View className="order-status">
+                  <Tag type={getOrderStatusTagType(order.orderStatus)}>
+                    {order.orderStatusStr}
+                  </Tag>
+                  <Tag type={getPayStatusTagType(order.payStatus)}>
+                    {order.payStatusStr}
+                  </Tag>
+                </View>
+              </View>
+              
+              <Divider />
+              
+              <View className="order-items">
+                {order.orderDetailList.map((item) => (
+                  <View key={item.detailId} className="order-item">
+                    <Avatar 
+                      size="large" 
+                      src={item.productIcon} 
+                      className="product-image"
+                    />
+                    <View className="product-info">
+                      <View className="product-name">{item.productName}</View>
+                      <View className="product-price-quantity">
+                        <Price price={item.productPrice} size="small" />
+                        <Text className="quantity">x{item.productQuantity}</Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+              
+              <Divider />
+              
+              <View className="order-footer">
+                <View className="order-time">{order.createTime}</View>
+                <View className="order-amount">
+                  <Text className="amount-label">总计: </Text>
+                  <Price price={order.orderAmount} size="normal" />
+                </View>
+              </View>
+            </Card>
+          ))}
+          
+          {loading && page > 1 && (
+            <View className="loading-more">
+              <Text>加载中...</Text>
             </View>
-          </Cell>
-        ))}
-      </View>
-
-      <View className='order-footer'>
-        <View className='total'>
-          总计: <Text className='price'>¥{totalPrice.toFixed(2)}</Text>
-        </View>
-        <Button type='primary' onClick={() => setShowPayWay(true)}>
-          去支付
-        </Button>
-      </View>
-
-      <Popup
-        visible={showPayWay}
-        position='bottom'
-        onClose={() => setShowPayWay(false)}
-      >
-        <View className='pay-way-popup'>
-          <View className='popup-title'>选择支付方式</View>
-          <Radio.Group value={selectedPayWay?.id} onChange={(value) => {
-            const way = payWays.find(w => w.id === value)
-            setSelectedPayWay(way || null)
-          }}>
-            {payWays.map((way) => (
-              <Cell key={way.id}>
-                <Radio value={way.id}>{way.package}</Radio>
-              </Cell>
-            ))}
-          </Radio.Group>
-          <View className='popup-footer'>
-            <Button type='primary' onClick={handleSubmit}>
-              确认支付
-            </Button>
-          </View>
-        </View>
-      </Popup>
+          )}
+          
+          {!hasMore && orders.length > 0 && (
+            <View className="no-more">
+              <Text>没有更多了</Text>
+            </View>
+          )}
+        </ScrollView>
+      )}
     </View>
   )
 }
 
-export default ConfirmOrder 
+export default OrdersPage

@@ -1,60 +1,124 @@
-.confirm-order {
+.orders-page {
   min-height: 100vh;
   background: #f7f8fa;
   padding-bottom: 100px;
 
-  .order-info {
+  .orders-header {
+    padding: 16px;
     background: #fff;
     margin-bottom: 12px;
-  }
-
-  .order-items {
-    background: #fff;
-    padding: 16px;
-
-    .section-title {
-      font-size: 16px;
+    
+    .page-title {
+      font-size: 18px;
       font-weight: bold;
-      margin-bottom: 16px;
     }
   }
 
-  .order-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 50px;
-    background: #fff;
-    display: flex;
-    align-items: center;
+  .skeleton-container {
     padding: 0 16px;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    
+    .skeleton-item {
+      margin-bottom: 12px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+  }
 
-    .total {
-      flex: 1;
-      font-size: 16px;
+  .orders-list {
+    padding: 0 16px;
+    height: calc(100vh - 60px);
+  }
 
-      .price {
-        color: #ff4d4f;
-        font-weight: bold;
+  .loading-more, .no-more {
+    text-align: center;
+    padding: 16px 0;
+    color: #999;
+    font-size: 14px;
+  }
+
+  .order-card {
+    margin: 12px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    
+    .order-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      
+      .order-id {
+        font-size: 14px;
+        color: #666;
+      }
+      
+      .order-status {
+        display: flex;
+        gap: 8px;
+      }
+    }
+    
+    .order-items {
+      padding: 0 16px;
+      
+      .order-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        .product-image {
+          margin-right: 12px;
+          border-radius: 4px;
+          overflow: hidden;
+        }
+        
+        .product-info {
+          flex: 1;
+          
+          .product-name {
+            font-size: 14px;
+            margin-bottom: 4px;
+          }
+          
+          .product-price-quantity {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            
+            .quantity {
+              font-size: 14px;
+              color: #999;
+            }
+          }
+        }
+      }
+    }
+    
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      
+      .order-time {
+        font-size: 12px;
+        color: #999;
+      }
+      
+      .order-amount {
+        display: flex;
+        align-items: center;
+        
+        .amount-label {
+          font-size: 14px;
+          margin-right: 4px;
+        }
       }
     }
   }
-
-  .pay-way-popup {
-    padding: 16px;
-
-    .popup-title {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-
-    .popup-footer {
-      margin-top: 24px;
-      padding: 0 16px;
-    }
-  }
-} 
+}
