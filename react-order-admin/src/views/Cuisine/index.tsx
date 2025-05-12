@@ -19,9 +19,17 @@ const CuisineManagementPage: React.FC = () => {
   const [form] = Form.useForm();
 
   const handleDelete = async (categoryId: number) => {
-    await deleteCuisine(categoryId);
-    await getCuisineListData();
-    message.success("删除菜系成功");
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这个菜系吗？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        await deleteCuisine(categoryId);
+        await getCuisineListData();
+        message.success("删除菜系成功");
+      }
+    });
   };
 
   const handleSubmit = async () => {

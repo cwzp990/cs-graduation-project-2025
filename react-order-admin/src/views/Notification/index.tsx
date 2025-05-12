@@ -1,89 +1,110 @@
 import React, { useEffect, useState } from "react";
 import { List, Card, Typography, Button, Modal, Input, message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
-import { getNotificationList } from "../../service/url";
+import { getNoticeData, uodateNoticeData } from "../../service/url";
+
 import "./index.scss";
 
 const { Text } = Typography;
 
-type Dishes = {
-  name: string,
-  description: string,
-  url: string,
+interface Dish {
+  name: string;
+  description: string;
 }
 
-type MenuList = {
-  day: string,
-  dishes: Dishes[]
+interface MenuItem {
+  id: number;
+  day: string;
+  dishes: Dish[];
 }
 
 const NotificationManagementPage: React.FC = () => {
-  const [menuData, setMenuData] = useState<MenuList[]>([]);
+  const [menuData, setMenuData] = useState<MenuItem[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  // 添加编辑中的数据状态
-  const [editingData, setEditingData] = useState<Dishes[]>([]);
-  // 添加当前编辑的日期索引状态
-  const [currentEditIndex, setCurrentEditIndex] = useState<number>(-1);
+  const [editData, setEditData] = useState<MenuItem | null>(null);
 
-  const showEditModal = (dishes: Dishes[], index: number) => {
-    setEditingData(dishes);
-    setCurrentEditIndex(index);
+  const showEditModal = (item: MenuItem) => {
+    setEditData(item);
     setIsModalVisible(true);
   };
 
-  const handleDishChange = (index: number, field: keyof Dishes, value: string) => {
-    const newData = [...editingData];
-    newData[index] = {
-      ...newData[index],
-      [field]: value
+  const handleDishChange = (
+    dishIndex: number,
+    field: keyof Dish,
+    value: string
+  ) => {
+    if (!editData) return;
+
+    const updatedDishes = [...editData.dishes];
+    updatedDishes[dishIndex] = {
+      ...updatedDishes[dishIndex],
+      [field]: value,
     };
-    setEditingData(newData);
+
+    setEditData({
+      ...editData,
+      dishes: updatedDishes,
+    });
+  };
+
+  const deleteDish = (dishIndex: number) => {
+    if (!editData) return;
+
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这个菜品吗？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk: () => {
+        const updatedDishes = editData.dishes.filter(
+          (_, index) => index !== dishIndex
+        );
+        setEditData({
+          ...editData,
+          dishes: updatedDishes,
+        });
+      }
+    });
+  };
+
+  const addDish = () => {
+    if (!editData) return;
+
+    setEditData({
+      ...editData,
+      dishes: [...editData.dishes, { name: "", description: "" }],
+    });
   };
 
   const handleOk = async () => {
-    try {
-      // 数据验证
-      if (editingData.some(dish => !dish.name.trim())) {
-        message.error('菜品名称不能为空');
-        return;
-      }
+    if (!editData) return;
 
-      // 更新本地数据
-      const newMenuData = [...menuData];
-      newMenuData[currentEditIndex] = {
-        ...newMenuData[currentEditIndex],
-        dishes: editingData
-      };
-
-      // TODO: 调用更新API
-      // await updateMenu(newMenuData[currentEditIndex]);
-
-      setMenuData(newMenuData);
+    const res = await uodateNoticeData(editData);
+    if (res.code === 0) {
+      message.success("保存成功");
       setIsModalVisible(false);
-      message.success('操作成功');
-    } catch (error) {
-      message.error('操作失败');
+      setEditData(null);
+      await queryNotice();
+    } else {
+      message.error("保存失败");
     }
   };
 
   const handleCancel = () => {
     setIsModalVisible(false);
+    setEditData(null);
   };
 
-  // 删除菜品
-  const deleteDish = (index: number) => {
-    const newData = [...editingData];
-    newData.splice(index, 1);
-    setEditingData(newData);
+  const queryNotice = async () => {
+    const res = await getNoticeData();
+    if (res.code === 0) {
+      setMenuData(res.data);
+    }
   };
 
-  // 添加新菜品
-  const addDish = () => {
-    setEditingData([
-      ...editingData,
-      { name: '', description: '', url: '' }
-    ]);
-  };
+  useEffect(() => {
+    queryNotice();
+  }, []);
 
   const getNotificationListData = async () => {
     const res = await getNotificationList();
@@ -99,18 +120,18 @@ const NotificationManagementPage: React.FC = () => {
       <List
         grid={{ gutter: 16, column: 4 }}
         dataSource={menuData}
-        renderItem={(item, index) => (
+        renderItem={(item: MenuItem) => (
           <List.Item>
             <Card
               title={item.day}
-              extra={<Button onClick={() => showEditModal(item.dishes, index)}>编辑</Button>}
+              extra={<Button onClick={() => showEditModal(item)}>编辑</Button>}
             >
               <List
                 dataSource={item.dishes}
-                renderItem={(dish) => (
+                renderItem={(dish: Dish) => (
                   <List.Item>
                     <Text strong>{dish.name}</Text>
-                    <Text type="secondary" block>
+                    <Text type="secondary" style={{ display: "block" }}>
                       {dish.description}
                     </Text>
                   </List.Item>
@@ -123,7 +144,7 @@ const NotificationManagementPage: React.FC = () => {
       <Modal
         maskClosable={false}
         title="编辑菜品信息"
-        visible={isModalVisible}
+        open={isModalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
         okText="确定"
@@ -131,29 +152,13 @@ const NotificationManagementPage: React.FC = () => {
         className="edit-week-dishes-modal"
       >
         <div className="dishes-list-wrapper">
-          <div className="edit-item">
-            {
-              editingData.map((dish, dishIndex) => (
-                <div className="edit-item" key={dishIndex}>
-                  <div className="edit-item-name">
-                    <Input
-                      placeholder="请输入菜品名称"
-                      value={dish.name}
-                      onChange={(e) =>
-                        handleDishChange(dishIndex, "name", e.target.value)
-                      }
-                    />
-                    <Button
-                      danger
-                      type="text"
-                      icon={<DeleteOutlined />}
-                      onClick={() => deleteDish(dishIndex)}
-                    />
-                  </div>
-                  <Input.TextArea
-                    className="edit-item-desc"
-                    placeholder="请输入菜品描述"
-                    value={dish.description}
+          {editData &&
+            editData.dishes.map((dish: Dish, dishIndex: number) => (
+              <div className="edit-item" key={dishIndex}>
+                <div className="edit-item-name">
+                  <Input
+                    placeholder="菜品名称"
+                    value={dish.name}
                     onChange={(e) =>
                       handleDishChange(dishIndex, "description", e.target.value)
                     }

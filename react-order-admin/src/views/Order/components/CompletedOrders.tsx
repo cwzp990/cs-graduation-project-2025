@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Table, Form, Input, Button, Space, Select, Image, message } from "antd";
+import {
+  Table,
+  Form,
+  Input,
+  Button,
+  Space,
+  Image,
+  message,
+} from "antd";
 import { getOrderList, finishOrder } from "../../../service/url";
 
 type OrderDetail = {
@@ -8,7 +16,7 @@ type OrderDetail = {
   productId: string;
   productName: string;
   productPrice: number;
-}
+};
 
 type Order = {
   orderId: string;
@@ -25,7 +33,7 @@ type Order = {
   createTime: string;
   updateTime: string;
   orderDetailList: OrderDetail[];
-}
+};
 
 const CompletedOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -56,6 +64,8 @@ const CompletedOrders: React.FC = () => {
     if (res.code === 0) {
       message.success("订单完结成功");
       getListData();
+    } else {
+      message.error(res.msg);
     }
   };
 
@@ -158,10 +168,10 @@ const CompletedOrders: React.FC = () => {
       key: "action",
       render: (_, record) => (
         <Space>
-        <Button type="link" onClick={() => finishOrderHandle(record)}>
-          完结订单
-        </Button>
-      </Space>
+          <Button type="link" onClick={() => finishOrderHandle(record)}>
+            完结订单
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -173,29 +183,18 @@ const CompletedOrders: React.FC = () => {
   return (
     <div style={{ position: "relative" }}>
       {/* 筛选表单 */}
-      <Form
-        form={filterForm}
-        layout="inline"
-        autoComplete="off"
-      >
-        <Form.Item name="orderNumber" label="订单编号">
-          <Input placeholder="请输入订单编号" allowClear autoComplete="off" />
+      <Form form={filterForm} layout="inline" autoComplete="off">
+        <Form.Item name="orderId" label="订单编号">
+          <Input placeholder="请输入订单编号" allowClear />
         </Form.Item>
         <Form.Item name="productName" label="商品名称">
-          <Input placeholder="请输入商品名称" allowClear autoComplete="off" />
-        </Form.Item>
-        <Form.Item name="paymentType" label="支付类型">
-          <Select
-            options={[]}
-            placeholder="请选择支付类型"
-            allowClear
-          />
+          <Input placeholder="请输入商品名称" allowClear />
         </Form.Item>
         <Form.Item>
           <Button
             type="primary"
-            htmlType="submit"
             style={{ marginRight: "10px" }}
+            onClick={getListData}
           >
             筛选
           </Button>

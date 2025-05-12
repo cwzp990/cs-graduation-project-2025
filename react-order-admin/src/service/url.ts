@@ -57,14 +57,24 @@ export const getLogin = async (phone: string, password: string) => {
 };
 
 // 获取人员列表
-export const getPersonList = async () => {
-  return getData("/admin/list", {});
+export const getPersonList = async (params?: { username?: string; gender?: number }) => {
+  return getData("/admin/list", params || {});
 };
 
 // 新增人员
 export const updatePerson = async (data) => {
   return postData("/admin/save", data);
 };
+
+// 获取一周菜品信息
+export const getNoticeData = async() => {
+  return getData('/notice/weekly-menu', {})
+}
+
+// 更新一周菜品信息
+export const uodateNoticeData = async (data) => {
+  return postData('/notice/weekly-menu/update', data)
+}
 
 // 获取菜系列表
 export const getCuisineList = async () => {
@@ -105,8 +115,8 @@ export const changeDishStatus = async (status: number, productId: number) => {
 };
 
 // 获取订单列表
-export const getOrderList = async (data) => {
-  return postData("/seller/order/list", data);
+export const getOrderList = async (params: any) => {
+  return postData("/seller/order/list", params);
 };
 
 // 完结订单

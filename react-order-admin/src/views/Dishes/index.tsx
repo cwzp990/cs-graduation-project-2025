@@ -50,17 +50,9 @@ const DishManagementPage: React.FC = () => {
   const [filterForm] = Form.useForm();
   const [form] = Form.useForm();
 
-  const handleFilterSubmit = async () => {
-    const validate = await filterForm.validateFields();
-    if (validate) {
-      const params = filterForm.getFieldsValue();
-      getDishes(params);
-    }
-  };
-
-  const handleFilterReset = async () => {
+  const handleFilterReset = () => {
     filterForm.resetFields();
-    getDishes({});
+    getDishesData();
   };
 
   const handleSubmit = async () => {
@@ -88,11 +80,19 @@ const DishManagementPage: React.FC = () => {
   };
 
   const changeStatus = async (record: Dish) => {
-    await changeDishStatus(record.productStatus, record.productId);
-    getDishesData();
-    message.success(
-      record.productStatus === 0 ? "下架菜品成功" : "上架菜品成功"
-    );
+    Modal.confirm({
+      title: '确认操作',
+      content: `确定要${record.productStatus === 0 ? '下架' : '上架'}这个菜品吗？`,
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        await changeDishStatus(record.productStatus, record.productId);
+        getDishesData();
+        message.success(
+          record.productStatus === 0 ? "下架菜品成功" : "上架菜品成功"
+        );
+      }
+    });
   };
 
   const columns = [
@@ -100,6 +100,15 @@ const DishManagementPage: React.FC = () => {
       title: "菜品名称",
       dataIndex: "productName",
       key: "productName",
+    },
+    {
+      title: "菜系",
+      dataIndex: "categoryType",
+      key: "categoryType",
+      render: (categoryId: number) => {
+        const category = tags.find((tag) => tag.categoryId === categoryId);
+        return category?.categoryName || "-";
+      },
     },
     {
       title: "图片",
@@ -119,10 +128,10 @@ const DishManagementPage: React.FC = () => {
       key: "productStock",
     },
     {
-      title: "创建时间",
-      dataIndex: "createTime",
-      key: "createTime",
-      render: (time: string) => dayjs(time).format("YYYY-MM-DD HH:mm:ss"),
+      title: "描述",
+      dataIndex: "productDescription",
+      key: "productDescription",
+      ellipsis: true,
     },
     {
       title: "更新时间",
@@ -153,7 +162,8 @@ const DishManagementPage: React.FC = () => {
   ];
 
   const getDishesData = async () => {
-    const res = await getDishes({});
+    const params = filterForm.getFieldsValue();
+    const res = await getDishes(params);
     setDishes(res.data.list ?? []);
     setPagination(res.data.page);
   };
@@ -172,7 +182,7 @@ const DishManagementPage: React.FC = () => {
   return (
     <div style={{ position: "relative" }}>
       {/* 筛选表单 */}
-      <Form form={filterForm} layout="inline" onFinish={handleFilterSubmit}>
+      <Form form={filterForm} layout="inline" autoComplete="off">
         <Form.Item name="name" label="菜品名称">
           <Input placeholder="请输入菜品名称" allowClear />
         </Form.Item>
@@ -185,10 +195,20 @@ const DishManagementPage: React.FC = () => {
             options={tags}
           />
         </Form.Item>
+        <Form.Item name="status" label="状态">
+          <Select
+            allowClear
+            placeholder="请选择状态"
+            options={[
+              { label: "上架", value: 0 },
+              { label: "下架", value: 1 },
+            ]}
+          />
+        </Form.Item>
         <Form.Item>
           <Button
             type="primary"
-            htmlType="submit"
+            onClick={getDishesData}
             style={{ marginRight: "10px" }}
           >
             筛选

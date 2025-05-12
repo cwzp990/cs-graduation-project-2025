@@ -20,7 +20,10 @@ const UserManagement: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [sellerId, setSellerId] = useState<number | null>(null);
 
-  const handleFilter = () => {};
+  const handleFilter = () => {
+    const values = filterForm.getFieldsValue();
+    getPersonListData(values);
+  };
 
   const handleEdit = (record: User) => {
     setSellerId(record.sellerId);
@@ -107,8 +110,8 @@ const UserManagement: React.FC = () => {
     },
   ];
 
-  const getPersonListData = async () => {
-    const res = await getPersonList();
+  const getPersonListData = async (params?: { username?: string; gender?: number }) => {
+    const res = await getPersonList(params);
     setPersonnel(res.data.list);
   };
 
@@ -119,7 +122,7 @@ const UserManagement: React.FC = () => {
   return (
     <div style={{ position: "relative" }}>
       {/* 使用定义好的 filterForm */}
-      <Form form={filterForm} layout="inline">
+      <Form form={filterForm} layout="inline" autoComplete="off">
         <Form.Item name="name" label="姓名">
           <Input placeholder="请输入姓名" />
         </Form.Item>
